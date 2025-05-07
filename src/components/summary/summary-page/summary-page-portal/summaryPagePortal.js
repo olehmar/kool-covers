@@ -1,0 +1,203 @@
+import $ from "jquery";
+import "./summaryPagePortal.scss";
+import "jquery-validation";
+import { createPDF } from "../../../../core/customFunctions/createPDF";
+import { toggleLoad } from "../../../../core/3d-configurator";
+
+function saveFormData() {
+  const formData = {
+    firstname: $("#firstname").val(),
+    phoneNumber: $("#phoneNumber").val(),
+    email: $("#email").val(),
+    zipCode: $("#zip-code").val(),
+    comment: $("#comment").val() || "",
+    agree: $("#agree").is(":checked"),
+  };
+  localStorage.setItem("summaryFormData", JSON.stringify(formData));
+}
+
+export function loadFormData(container) {
+  const savedData = JSON.parse(localStorage.getItem("summaryFormData"));
+
+  if (savedData) {
+    $(`${container} #firstname`).val(savedData.firstname);
+    $(`${container} #phoneNumber`).val(savedData.phoneNumber);
+    $(`${container} #email`).val(savedData.email);
+    $(`${container} #zip-code`).val(savedData.zipCode);
+    $(`${container} #comment`).val(savedData.comment);
+    $(`${container} #agree`).prop("checked", savedData.agree);
+  }
+}
+
+export function summaryPagePortalComponent(container, comment = true) {
+  const html = $(`
+    <div class='summary-portal' id='${
+      comment ? "sum-portal-with-comment" : "sum-portal"
+    }'>
+      <div class="form-container">
+        <form class="form" id="form">
+          <div class="form__header">
+            <h2 class="form__header__title">${
+              comment
+                ? "Fill in details below and we will contact you:"
+                : "Fill in details to view summary:"
+            }</h2>
+
+            <button type="button" id="closeForm" class="form__header__close"></button>
+          </div>
+
+          <div class="form__top">
+              <div class="form__group">
+                <input class="form__input" type="text" id="firstname" name="firstname" class="form-control" placeholder="First & Last name">
+              </div>
+
+              <div class="form__group">
+                <input class="form__input" type="text" id="phoneNumber" name="phoneNumber" class="form-control" placeholder="Telephone">
+              </div>
+          </div>
+
+          <div class="form__top">
+            <div class="form__group">
+              <input class="form__input" type="email" id="email" name="email" class="form-control" placeholder="Email">
+            </div>
+
+            <div class="form__group">
+              <input class="form__input" type="text" id="zip-code" name="zip-code" class="form-control" placeholder="Zip-code">
+            </div>
+          </div>
+
+           ${
+             comment
+               ? `<div class="form__group">
+              <input class="form__input" type="textarea" id="comment" name="comment" class="form-control" placeholder="Comments">
+            </div>
+`
+               : ``
+           } 
+
+          <div class="form__check">
+            <input type="checkbox" id="agree" name="agree" class="form__check-input">
+            <label for="agree" class="form__check__label">
+I consent to Chaya Outdoors LLC using my personal information for sales, marketing, research, and targeting purposes and agree to the Terms & Conditions.
+            </label>
+          </div>
+
+          <div class="form__buttons">
+            <button type="button" id="cancelButton" class="form__buttons__button form__buttons__button--back">Cancel</button>
+            <button type="submit" class="form__buttons__button">${
+              comment ? "Contact" : "View summary"
+            }</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `);
+
+  html.hide();
+  const form = html.find("#form");
+
+  $(container).append(html);
+
+  $.validator.addMethod(
+    "phoneNumber",
+    function (value, element) {
+      const regex = /^[0-9]{10}$/;
+      return this.optional(element) || regex.test(value);
+    },
+    "Please enter a valid phone number (10 digits)."
+  );
+
+  form.validate({
+    rules: {
+      firstname: {
+        required: true,
+        minlength: 2,
+      },
+      phoneNumber: {
+        required: true,
+        phoneNumber: true,
+      },
+      email: {
+        required: true,
+        email: true,
+      },
+      agree: {
+        required: true,
+      },
+      comment: {
+        required: false,
+      },
+    },
+    messages: {
+      firstname: {
+        required: "Please enter your first name",
+        minlength: "Your name must be at least 2 characters long",
+      },
+      phoneNumber: {
+        required: "Please enter your phone number",
+        phoneNumber: "Phone number must be 10 digits",
+      },
+      email: {
+        required: "Please enter your email",
+        email: "Please enter a valid email address",
+      },
+      agree: {
+        required: "You must agree to the terms and conditions",
+      },
+    },
+    submitHandler: async function (form, event) {
+      event.preventDefault();
+
+      saveFormData();
+
+      if (!comment) {
+        html.hide();
+      } else {
+        toggleLoad(true);
+
+        // await createPDF();
+
+        toggleLoad(false);
+
+        alert("Form has been submitted without redirect!");
+
+        html.hide();
+      }
+    },
+  });
+
+  const cancelButton = html.find("#cancelButton");
+  const closeButton = html.find("#closeForm");
+
+  closeButton.on("click", function () {
+    if (!comment) {
+      toggleLoad(true);
+      $("html, body").animate({ scrollTop: 0 }, "fast", () => {
+        $("#summary-content").hide();
+        $("body").removeClass("body-overflow-auto");
+      });
+      toggleLoad(false);
+      html.hide();
+    } else {
+      html.hide();
+      $("body").addClass("body-overflow-auto");
+    }
+  });
+
+  cancelButton.on("click", function () {
+    if (!comment) {
+      toggleLoad(true);
+      $("html, body").animate({ scrollTop: 0 }, "fast", () => {
+        $("#summary-content").hide();
+        $("body").removeClass("body-overflow-auto");
+      });
+      toggleLoad(false);
+      html.hide();
+    } else {
+      $("#form")[0].reset();
+      form.validate().resetForm();
+      html.hide();
+      $("body").addClass("body-overflow-auto");
+    }
+  });
+}
