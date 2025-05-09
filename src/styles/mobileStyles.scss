@@ -8,6 +8,11 @@
   //   }
   // }
 
+  .type_interface_colors-buttons_label {
+    min-width: 59px;
+    width: 100%;
+  }
+
   .pcr-app {
     position: absolute !important;
     left: 0 !important;
@@ -34,8 +39,16 @@
   }
 
   .container_shareAR {
-    position: static !important;
+    left: 50%;
+    width: fit-content;
+    transform: translateX(-50%);
   }
+
+  // .container_shareAR {
+  //   position: absolute !important;
+  //   right: 50%;
+  //   transform: translateX(50%);
+  // }
 
   // .body-hidden {
   //   overflow: hidden !important;
@@ -86,9 +99,15 @@
     height: 100% !important;
   }
 
+  .input_time_switch {
+    right: 16px;
+  }
+
   .canvas_buttons {
-    justify-content: right;
-    padding-right: 30px;
+    justify-content: normal;
+    right: 16px;
+    display: flex;
+    flex-direction: row-reverse;
   }
 
   .portal-container {
@@ -399,7 +418,8 @@
   #summary-content {
     top: 0;
     z-index: 9999;
-    padding: 16px;
+    padding: 0;
+    border-radius: 0;
   }
 
   #zip-screen-portal {
@@ -412,7 +432,8 @@
   }
 
   .sum__page {
-    padding: 0;
+    padding: 16px;
+    border-radius: 0;
     border: none;
 
     &__img {
@@ -629,10 +650,6 @@
 
   #js-toggleDayNight {
     left: 16px;
-  }
-
-  .canvas_buttons {
-    padding-right: 16px;
   }
 
   .form__check-input:checked::before {

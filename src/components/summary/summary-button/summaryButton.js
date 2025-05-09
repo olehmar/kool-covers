@@ -13,13 +13,6 @@ export function summaryButtonComponent(container) {
     const mainContent = $("#content");
     const summaryPage = $("#summary-content");
 
-    //OPEN FORM
-    if (!JSON.parse(localStorage.getItem("summaryFormData"))) {
-      $("#sum-portal").show();
-
-      $("body").removeClass("body-overflow-auto");
-    }
-
     if ($("#summary-content").length) {
       $("#summary-content").remove();
     }

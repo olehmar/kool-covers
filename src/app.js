@@ -15,7 +15,7 @@ export const mainContent = $('<main class="main-content" id="content"></main>');
 const footer = $('<footer class="footer footer-h" id="footer"></footer>');
 
 $(document).ready(async () => {
-  await modelViewerComponent(mainContent);
+  await modelViewerComponent(mainContent, false);
   summaryPagePortalComponent(mainContent, false);
   summaryPagePortalComponent(mainContent);
   shareArComponent(mainContent);

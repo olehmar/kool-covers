@@ -50,6 +50,9 @@ export const typesInputs = {
   roofType: "roofTypes",
 };
 
+export let stringNameRoofColor = null;
+export let stringNameFrameColor = null;
+
 export const typeSubSystem = {
   "Motorized Zip Screen": "Motorized Zip Screen",
   "Sliding Glass Door": "Sliding Glass Door",
@@ -87,10 +90,14 @@ export function updateTextParam(
     ) {
       text.push("Freestanding");
     }
-  } else if (subSystem) {
+  }
+  if (subSystem) {
     customSetting.subSystem.forEach((option) => text.push(option));
-  } else {
-    customSetting.electro.forEach((option) => text.push(option));
+  }
+  if (electro) {
+    customSetting.electro.forEach((option) => {
+      text.push(option);
+    });
   }
 
   let displayText = "";
@@ -811,6 +818,7 @@ export function interfaceGroupInputsComponent(
               .closest(".type_interface_colors-buttons_item")
               .addClass(activeColorClass);
             $(this).prop("checked", true);
+            stringNameFrameColor = nameOfColor;
 
             setTimeout(() => {
               $(this)
@@ -828,6 +836,7 @@ export function interfaceGroupInputsComponent(
         //HANDLE INPUTS
         colorButtonContent.find('input[type="radio"]').on("click", function () {
           const nameOfColor = $(this).val();
+          stringNameFrameColor = nameOfColor;
 
           const backgroundColor = pergola.rgbToHex(
             $(this)
@@ -890,6 +899,7 @@ export function interfaceGroupInputsComponent(
             pickr.on("change", (color) => {
               const selectedColor = color.toHEXA().toString();
               state.colorBody = selectedColor;
+              stringNameFrameColor = state.colorBody;
 
               $(this)
                 .closest(".interface__group")
@@ -932,8 +942,6 @@ export function interfaceGroupInputsComponent(
       if (title === "Roof Color") {
         const mesh = GetMesh("louver_X");
 
-        console.log(mesh, "COLOR MESH Louver");
-
         //#region INIT INPUT
         colorButtonContent.find('input[type="radio"]').each(function () {
           const backgroundColor = pergola.rgbToHex(
@@ -950,6 +958,8 @@ export function interfaceGroupInputsComponent(
               .closest(".type_interface_colors-buttons_item")
               .addClass(activeColorClass);
             $(this).prop("checked", true);
+
+            stringNameRoofColor = nameOfColor;
 
             setTimeout(() => {
               $(this)
@@ -979,6 +989,7 @@ export function interfaceGroupInputsComponent(
             );
             state.colorRoof = backgroundColor;
             const nameOfColor = $(this).val();
+            stringNameRoofColor = nameOfColor;
 
             $(this)
               .closest(".type_interface_colors-buttons_item")
@@ -1030,6 +1041,7 @@ export function interfaceGroupInputsComponent(
             pickr.on("change", (color) => {
               const selectedColor = color.toHEXA().toString();
               state.colorRoof = selectedColor;
+              stringNameRoofColor = state.colorRoof;
 
               $(this)
                 .closest(".interface__group")

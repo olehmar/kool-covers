@@ -73,6 +73,7 @@ import {
   MORPH_DATA,
   MORPH_DATA_SI,
   pdfImg,
+  pdfImgTop,
   SHADOW_TRANSPARENCY,
   state,
   WALL_OFFSETS,
@@ -167,6 +168,9 @@ let paramsLoaded = false;
 let isFirstStart = true;
 let init = true;
 const spanAvatarThickness = 0.1;
+
+let pointsBeamX = [];
+let pointsBeamZ = [];
 
 let tblInfo;
 let tblInfoItemQr;
@@ -2652,7 +2656,8 @@ export class PergolaObject {
     this.heatersFront = [];
     this.heatersBack = [];
     this.fans = [];
-    this.fansBeam = [];
+    this.fansBeamX = [];
+    this.fansBeamY = [];
   }
 
   createFrom3DModel(model) {
@@ -4019,6 +4024,7 @@ export class PergolaObject {
             switch (system.type) {
               case pergolaConst.systemType.privacyWall:
                 const frame = system.object;
+
                 // system.object.position.x = span.posX;
                 // system.object.position.z = span.posZ;
 
@@ -4027,10 +4033,12 @@ export class PergolaObject {
                 if (system.object.children.length) {
                   console.log("EMPTY OBJ");
                 }
-
+                // const mesh = post.children[0];
                 let post = isDirectionX
                   ? scene.getObjectByName("privacy_wall_post_3x3")
                   : scene.getObjectByName("privacy_wall_post_3x3_side");
+
+                post.material.color.set(state.colorBody);
 
                 let blade30 = isDirectionX
                   ? scene.getObjectByName("privacy_wall_2x2")
@@ -4091,7 +4099,7 @@ export class PergolaObject {
                   }
                 }
 
-                const gapShutter = 0.06;
+                const gapShutter = !state.slatsSize ? 0.13 : 0.06;
                 const heightShutter = !state.slatsSize ? 0.03 : 0.06;
                 const fullShutterHeight = heightShutter + gapShutter;
                 const totalHeight = this.getMeters(state.height);
@@ -4183,12 +4191,21 @@ export class PergolaObject {
     this.changeRoofVisibilityRest(false, "heatersFront", null, true);
     this.changeRoofVisibilityRest(false, "heatersBack", null, true);
     this.changeRoofVisibilityRest(false, "fans", null, true);
-    this.changeRoofVisibilityRest(false, "fansBeam", null, true);
+    this.changeRoofVisibilityRest(false, "fansBeamX", null, true);
+    this.changeRoofVisibilityRest(false, "fansBeamY", null, true);
+    this.changeRoofVisibility(false, "pointLED", null, true);
+    this.changeRoofVisibility(false, "rampLEDX", null, true);
+    this.changeRoofVisibility(false, "rampLEDY", null, true);
+
+    pointsBeamX = [];
+    pointsBeamZ = [];
+
     const header = GetGroup("header");
 
     if (
-      state.electro.has(pergolaConst.optionNameString.fans) &&
-      state.width > 4
+      state.electro.has(pergolaConst.optionNameString.fans) ||
+      (state.electro.has(pergolaConst.optionNameString.LEDRecessed) &&
+        state.width > 4)
     ) {
       this.setFans();
     }
@@ -4199,22 +4216,445 @@ export class PergolaObject {
       header.children[1].visible = false;
     }
 
-    // if (state.moodLight) {
-    //   const mesh = GetGroup("base").children[1];
+    if (state.electro.has(pergolaConst.optionNameString.LEDRecessed)) {
+      this.setPointLight();
+    }
 
-    //   mesh.visible = true;
-    //   if (mesh && mesh.material) {
-    //     mesh.material.emissive.set(state.colorLed);
+    if (state.electro.has(pergolaConst.optionNameString.LEDRampLight)) {
+      this.setLEDramp();
+    }
+  }
 
-    //     mesh.children.forEach((child) => {
-    //       if (child.material) {
-    //         child.material.emissive.set(state.colorLed);
-    //       }
-    //     });
-    //   }
-    // } else {
-    //   GetGroup("base").children[1].visible = false;
-    // }
+  setPointLight() {
+    const {
+      point_post_width,
+      point_post_length,
+      point_louver_width,
+      point_louver_length,
+    } = this.getPostPoints();
+
+    const { FL_point, FR_point, RR_point } = this.getCornerPoints();
+    const countPointLight = 5;
+
+    const cornerAndBeamPointZ = [
+      FR_point,
+      ...this.addOffset(point_post_length, "z", 0),
+      RR_point,
+    ];
+
+    const cornerAndBeamPointX = [
+      FL_point,
+      ...this.addOffset(point_post_width, "x", 0),
+      FR_point,
+    ];
+
+    let allPointsForLouversZ = [];
+    let allPointsForLouversX = [];
+
+    for (let i = 0; i < cornerAndBeamPointZ.length - 1; i++) {
+      const spanPoints = generateMidpoints(
+        cornerAndBeamPointZ[i],
+        cornerAndBeamPointZ[i + 1],
+        countPointLight
+      );
+
+      allPointsForLouversZ.push(...spanPoints);
+    }
+
+    for (let i = 0; i < cornerAndBeamPointX.length - 1; i++) {
+      const spanPoints = generateMidpoints(
+        cornerAndBeamPointX[i],
+        cornerAndBeamPointX[i + 1],
+        countPointLight
+      );
+
+      allPointsForLouversX.push(...spanPoints);
+    }
+
+    const offset = 0.07;
+
+    //#region SET POINT LED ON BEAM
+    if (state.directionRoof) {
+      for (let i = 0; i < pointsBeamX.length; i++) {
+        const pointX = pointsBeamX[i];
+
+        for (let i = 0; i < allPointsForLouversZ.length; i++) {
+          const pointZ = allPointsForLouversZ[i].z;
+
+          const element = this.getAvaliableObjectFromOneArray(
+            this.roof.pointLED
+          );
+
+          element.object.position.z = pointZ;
+          element.object.position.x = pointX;
+
+          element.object.visible = true;
+          element.object.children.forEach((child) => (child.visible = true));
+          element.active = true;
+        }
+      }
+    } else {
+      for (let i = 0; i < pointsBeamZ.length; i++) {
+        const pointZ = pointsBeamZ[i];
+
+        for (let i = 0; i < allPointsForLouversX.length; i++) {
+          const pointX = allPointsForLouversX[i].x;
+
+          const element = this.getAvaliableObjectFromOneArray(
+            this.roof.pointLED
+          );
+
+          element.object.position.z = pointZ;
+          element.object.position.x = pointX;
+
+          element.object.visible = true;
+          element.object.children.forEach((child) => (child.visible = true));
+          element.active = true;
+        }
+      }
+    }
+    // #endregion
+
+    //#region LEFT
+    for (let i = 0; i < allPointsForLouversZ.length; i++) {
+      const point = allPointsForLouversZ[i];
+      // console.log(this.pointLights);
+      const element = this.getAvaliableObjectFromOneArray(this.roof.pointLED);
+
+      // console.log(element);
+
+      element.object.position.z = point.z;
+      element.object.position.x = -point.x + offset;
+
+      element.object.visible = true;
+      element.object.children.forEach((child) => (child.visible = true));
+      element.active = true;
+    }
+    //#endregion
+
+    //#region RIGHT
+    for (let i = 0; i < allPointsForLouversZ.length; i++) {
+      const point = allPointsForLouversZ[i];
+      // console.log(this.pointLights);
+      const element = this.getAvaliableObjectFromOneArray(this.roof.pointLED);
+
+      // console.log(element);
+
+      element.object.position.z = point.z;
+      element.object.position.x = point.x - offset;
+
+      element.object.visible = true;
+      element.object.children.forEach((child) => (child.visible = true));
+      element.active = true;
+    }
+
+    //#endregion
+
+    //#region BACK
+    for (let i = 0; i < allPointsForLouversX.length; i++) {
+      const point = allPointsForLouversX[i];
+      const element = this.getAvaliableObjectFromOneArray(this.roof.pointLED);
+
+      element.object.position.z = -point.z + offset;
+      element.object.position.x = point.x;
+
+      element.object.visible = true;
+      element.object.children.forEach((child) => (child.visible = true));
+      element.active = true;
+    }
+
+    //#endregion
+
+    //#region FRONT
+    for (let i = 0; i < allPointsForLouversX.length; i++) {
+      const point = allPointsForLouversX[i];
+      const element = this.getAvaliableObjectFromOneArray(this.roof.pointLED);
+
+      element.object.position.z = point.z - offset;
+      element.object.position.x = point.x;
+
+      element.object.visible = true;
+      element.object.children.forEach((child) => (child.visible = true));
+      element.active = true;
+    }
+
+    //#endregion
+  }
+
+  setLEDramp() {
+    const {
+      point_post_width,
+      point_post_length,
+      point_louver_width,
+      point_louver_length,
+    } = this.getPostPoints();
+    const { span_width, span_depth } = this.getSpanPoints();
+
+    const { FL_point, FR_point, RR_point } = this.getCornerPoints();
+    const countPointLightSpanZ = Math.ceil(span_width / 3);
+    const countPointLightSpanX = Math.ceil(span_width / 3);
+
+    const cornerAndBeamPointZ = [
+      FR_point,
+      ...this.addOffset(point_post_length, "z", 0),
+      RR_point,
+    ];
+
+    const cornerAndBeamPointX = [
+      FL_point,
+      ...this.addOffset(point_post_width, "x", 0),
+      FR_point,
+    ];
+
+    let allPointsForLouversZ = [];
+    let allPointsForLouversX = [];
+
+    for (let i = 0; i < cornerAndBeamPointZ.length - 1; i++) {
+      const spanPoints = generateMidpoints(
+        cornerAndBeamPointZ[i],
+        cornerAndBeamPointZ[i + 1],
+        countPointLightSpanZ
+      );
+
+      allPointsForLouversZ.push(...spanPoints);
+    }
+
+    for (let i = 0; i < cornerAndBeamPointX.length - 1; i++) {
+      const spanPoints = generateMidpoints(
+        cornerAndBeamPointX[i],
+        cornerAndBeamPointX[i + 1],
+        countPointLightSpanX
+      );
+
+      allPointsForLouversX.push(...spanPoints);
+    }
+
+    const offset = 0.07 * 2.3;
+    const offseBeam = 0.08;
+    // let height = this.getMeters(state.height) - 0.9;
+
+    //#region SET RAM LED ON BEAM
+    //SOLID
+    if (!state.roofType) {
+      //X BEAM
+      for (let i = 0; i < point_post_length.length; i++) {
+        const pointZ = point_post_length[i].z;
+
+        //FIRT SIDE
+        for (let i = 0; i < allPointsForLouversX.length; i++) {
+          const pointX = allPointsForLouversX[i].x;
+
+          const element = this.getAvaliableObjectFromOneArray(
+            this.roof.rampLEDX
+          );
+
+          element.object.position.z = pointZ - offseBeam;
+          element.object.position.x = pointX;
+
+          element.object.visible = true;
+          element.object.children.forEach((child) => (child.visible = true));
+          element.active = true;
+        }
+        //SECOND SIDE
+        for (let i = 0; i < allPointsForLouversX.length; i++) {
+          const pointX = allPointsForLouversX[i].x;
+
+          const element = this.getAvaliableObjectFromOneArray(
+            this.roof.rampLEDX
+          );
+
+          element.object.position.z = pointZ + offseBeam;
+          element.object.position.x = pointX;
+
+          element.object.visible = true;
+          element.object.children.forEach((child) => (child.visible = true));
+          element.active = true;
+        }
+      }
+
+      //Y BEAM
+      for (let i = 0; i < point_post_width.length; i++) {
+        const pointX = point_post_width[i].x;
+
+        //FIRT SIDE
+        for (let i = 0; i < allPointsForLouversZ.length; i++) {
+          const pointZ = allPointsForLouversZ[i].z;
+
+          const element = this.getAvaliableObjectFromOneArray(
+            this.roof.rampLEDY
+          );
+
+          element.object.position.z = pointZ;
+          element.object.position.x = pointX - offseBeam;
+
+          element.object.visible = true;
+          element.object.children.forEach((child) => (child.visible = true));
+          element.active = true;
+        }
+        //SECOND SIDE
+        for (let i = 0; i < allPointsForLouversZ.length; i++) {
+          const pointZ = allPointsForLouversZ[i].z;
+
+          const element = this.getAvaliableObjectFromOneArray(
+            this.roof.rampLEDY
+          );
+
+          element.object.position.z = pointZ;
+          element.object.position.x = pointX + offseBeam;
+
+          element.object.visible = true;
+          element.object.children.forEach((child) => (child.visible = true));
+          element.active = true;
+        }
+      }
+    } else {
+      const pointBeamLenght = state.directionRoof
+        ? point_louver_length
+        : point_post_length;
+
+      const pointBeamWidth = state.directionRoof
+        ? point_post_width
+        : point_louver_width;
+
+      //X BEAM
+      for (let i = 0; i < pointBeamLenght.length; i++) {
+        const pointZ = pointBeamLenght[i].z;
+
+        //FIRT SIDE
+        for (let i = 0; i < allPointsForLouversX.length; i++) {
+          const pointX = allPointsForLouversX[i].x;
+
+          const element = this.getAvaliableObjectFromOneArray(
+            this.roof.rampLEDX
+          );
+
+          element.object.position.z = pointZ - offseBeam;
+          element.object.position.x = pointX;
+
+          element.object.visible = true;
+          element.object.children.forEach((child) => (child.visible = true));
+          element.active = true;
+        }
+        //SECOND SIDE
+        for (let i = 0; i < allPointsForLouversX.length; i++) {
+          const pointX = allPointsForLouversX[i].x;
+
+          const element = this.getAvaliableObjectFromOneArray(
+            this.roof.rampLEDX
+          );
+
+          element.object.position.z = pointZ + offseBeam;
+          element.object.position.x = pointX;
+
+          element.object.visible = true;
+          element.object.children.forEach((child) => (child.visible = true));
+          element.active = true;
+        }
+      }
+
+      //Y BEAM
+      for (let i = 0; i < pointBeamWidth.length; i++) {
+        const pointX = pointBeamWidth[i].x;
+
+        //FIRT SIDE
+        for (let i = 0; i < allPointsForLouversZ.length; i++) {
+          const pointZ = allPointsForLouversZ[i].z;
+
+          const element = this.getAvaliableObjectFromOneArray(
+            this.roof.rampLEDY
+          );
+
+          element.object.position.z = pointZ;
+          element.object.position.x = pointX + offseBeam;
+
+          element.object.visible = true;
+          element.object.children.forEach((child) => (child.visible = true));
+          element.active = true;
+        }
+        //SECOND SIDE
+        for (let i = 0; i < allPointsForLouversZ.length; i++) {
+          const pointZ = allPointsForLouversZ[i].z;
+
+          const element = this.getAvaliableObjectFromOneArray(
+            this.roof.rampLEDY
+          );
+
+          element.object.position.z = pointZ;
+          element.object.position.x = pointX - offseBeam;
+
+          element.object.visible = true;
+          element.object.children.forEach((child) => (child.visible = true));
+          element.active = true;
+        }
+      }
+    }
+    // #endregion
+
+    //#region LEFT
+    for (let i = 0; i < allPointsForLouversZ.length; i++) {
+      const point = allPointsForLouversZ[i];
+      // console.log(this.pointLights);
+      const element = this.getAvaliableObjectFromOneArray(this.roof.rampLEDY);
+      // height = element.object.position.y -;
+
+      // console.log(element);
+
+      element.object.position.z = point.z;
+      element.object.position.x = -point.x + offset;
+
+      element.object.visible = true;
+      element.object.children.forEach((child) => (child.visible = true));
+      element.active = true;
+    }
+    //#endregion
+
+    //#region RIGHT
+    for (let i = 0; i < allPointsForLouversZ.length; i++) {
+      const point = allPointsForLouversZ[i];
+      // console.log(this.pointLights);
+      const element = this.getAvaliableObjectFromOneArray(this.roof.rampLEDY);
+
+      // console.log(element);
+
+      element.object.position.z = point.z;
+      element.object.position.x = point.x - offset;
+
+      element.object.visible = true;
+      element.object.children.forEach((child) => (child.visible = true));
+      element.active = true;
+    }
+
+    //#endregion
+
+    //#region BACK
+    for (let i = 0; i < allPointsForLouversX.length; i++) {
+      const point = allPointsForLouversX[i];
+      const element = this.getAvaliableObjectFromOneArray(this.roof.rampLEDX);
+
+      element.object.position.z = -point.z + offset;
+      element.object.position.x = point.x;
+
+      element.object.visible = true;
+      element.object.children.forEach((child) => (child.visible = true));
+      element.active = true;
+    }
+
+    //#endregion
+
+    //#region FRONT
+    for (let i = 0; i < allPointsForLouversX.length; i++) {
+      const point = allPointsForLouversX[i];
+      const element = this.getAvaliableObjectFromOneArray(this.roof.rampLEDX);
+
+      element.object.position.z = point.z - offset;
+      element.object.position.x = point.x;
+
+      element.object.visible = true;
+      element.object.children.forEach((child) => (child.visible = true));
+      element.active = true;
+    }
+
+    //#endregion
   }
 
   setHeaters() {
@@ -4285,10 +4725,10 @@ export class PergolaObject {
     const offsetForOverhangPosts = 0;
 
     const {
-      point_post_width,
-      point_post_length,
       point_louver_width,
       point_louver_length,
+      point_post_length,
+      point_post_width,
     } = this.getPostPoints(offsetForOverhangPosts, offsetForOverhangPosts);
 
     const { FL_point, FR_point, RL_point, RR_point } = this.getCornerPoints(
@@ -4297,8 +4737,21 @@ export class PergolaObject {
     );
 
     const countPointLight = 1;
-    const cornerAndBeamPointZ = [FL_point, ...point_post_length, RR_point];
-    const cornerAndBeamPointX = [RL_point, ...point_post_width, FR_point];
+    let cornerAndBeamPointZ = null;
+    let cornerAndBeamPointX = null;
+
+    if (state.directionRoof) {
+      cornerAndBeamPointZ = [FL_point, ...point_louver_length, RR_point];
+      cornerAndBeamPointX = [RL_point, ...point_post_width, FR_point];
+    } else {
+      cornerAndBeamPointZ = [FL_point, ...point_post_length, RR_point];
+      cornerAndBeamPointX = [RL_point, ...point_louver_width, FR_point];
+    }
+
+    if (!state.roofType) {
+      cornerAndBeamPointZ = [FL_point, ...point_post_length, RR_point];
+      cornerAndBeamPointX = [RL_point, ...point_post_width, FR_point];
+    }
 
     let allPointsForLouversZ = [];
     let allPointsForLouversX = [];
@@ -4323,40 +4776,19 @@ export class PergolaObject {
       allPointsForLouversX.push(...spanPoints);
     }
 
-    const pointBeamDirRoof = state.roofType
-      ? point_louver_width
-      : point_post_width;
-    const pointBeamDir = state.roofType
-      ? point_louver_length
-      : point_post_length;
+    const fansBeam = state.directionRoof ? this.fansBeamY : this.fansBeamX;
 
     //#region BEAM X
-    if (!state.directionRoof) {
-      for (let i = 0; i < allPointsForLouversZ.length; i++) {
-        const pointZ = allPointsForLouversZ[i].z;
+    for (let i = 0; i < allPointsForLouversZ.length; i++) {
+      const pointZ = allPointsForLouversZ[i].z;
 
-        for (let a = 0; a < pointBeamDirRoof.length; a++) {
-          const pointX = pointBeamDirRoof[a].x;
-          const elementFan = this.getAvaliableObjectFromOneArray(pergola.fans);
+      for (let a = 0; a < allPointsForLouversX.length; a++) {
+        const pointX = allPointsForLouversX[a].x;
+        const elementFan = this.getAvaliableObjectFromOneArray(this.fans);
+        const elementBeam = this.getAvaliableObjectFromOneArray(fansBeam);
 
-          elementFan.object.position.x = pointX;
-          elementFan.object.position.z = pointZ;
-
-          console.log(elementFan.object, "FAN OBJECT", pointX, pointZ);
-
-          elementFan.object.visible = true;
-          elementFan.object.children.forEach((child) => (child.visible = true));
-          elementFan.active = true;
-        }
-      }
-    } else {
-      for (let i = 0; i < allPointsForLouversX.length; i++) {
-        const pointX = allPointsForLouversX[i].x;
-
-        for (let a = 0; a < pointBeamDir.length; a++) {
-          const pointZ = pointBeamDir[a].z;
-          const elementFan = this.getAvaliableObjectFromOneArray(pergola.fans);
-
+        //FANS
+        if (state.electro.has(pergolaConst.optionNameString.fans)) {
           elementFan.object.position.x = pointX;
           elementFan.object.position.z = pointZ;
 
@@ -4364,6 +4796,19 @@ export class PergolaObject {
           elementFan.object.children.forEach((child) => (child.visible = true));
           elementFan.active = true;
         }
+
+        //FANS BEAM
+        if (state.directionRoof) {
+          elementBeam.object.position.x = pointX;
+          pointsBeamX.push(pointX);
+        } else {
+          elementBeam.object.position.z = pointZ;
+          pointsBeamZ.push(pointZ);
+        }
+
+        elementBeam.object.visible = true;
+        elementBeam.object.children.forEach((child) => (child.visible = true));
+        elementBeam.active = true;
       }
     }
     //#endregion
@@ -4374,6 +4819,7 @@ export class PergolaObject {
 
     if (!state.roofType) {
       const element = this.roof.solidRoof[0];
+      element.object.material.color.set(state.colorRoof);
 
       this.changeObjectVisibility(true, element.object);
       element.active = true;
@@ -4962,7 +5408,8 @@ export class PergolaObject {
     // this.cloneInObject("heatersFront", 8 * 4);
     // this.cloneInObject("heatersBack", 8 * 4);
     this.cloneInObject("fans", 8 * 4);
-    // this.cloneInObject("fansBeam", 8 * 4);
+    this.cloneInObject("fansBeamX", 8 * 4);
+    this.cloneInObject("fansBeamY", 8 * 4);
   }
 
   cloneInObject(
@@ -5010,6 +5457,10 @@ export class PergolaObject {
     this.cloneRoofObject("louverX", prepareCountLouver);
 
     this.cloneRoofObject("solidRoof", 1);
+
+    this.cloneRoofObject("pointLED", 500);
+    this.cloneRoofObject("rampLEDX", 100);
+    this.cloneRoofObject("rampLEDY", 100);
   }
 
   cloneRoofObject(
@@ -5125,6 +5576,29 @@ export class PergolaObject {
       });
     }
 
+    if (type === "pointLED") {
+      model.traverse((o) => {
+        if (o.name === "point-light") {
+          element = o;
+        }
+      });
+    }
+
+    if (type === "rampLEDX") {
+      model.traverse((o) => {
+        if (o.name === "LED_ramp") {
+          element = o;
+        }
+      });
+    }
+    if (type === "rampLEDY") {
+      model.traverse((o) => {
+        if (o.name === "LED_ramp_Y") {
+          element = o;
+        }
+      });
+    }
+
     if (type === "heatersFront") {
       model.traverse((o) => {
         if (o.name === "Cube001") {
@@ -5141,9 +5615,17 @@ export class PergolaObject {
       });
     }
 
-    if (type === "fansBeam") {
+    if (type === "fansBeamX") {
       model.traverse((o) => {
-        if (o.name === "beam_fan_Y") {
+        if (o.name === "beam_x_fan") {
+          element = o;
+        }
+      });
+    }
+
+    if (type === "fansBeamY") {
+      model.traverse((o) => {
+        if (o.name === "beam_Y_fan") {
           element = o;
         }
       });
@@ -7847,6 +8329,10 @@ class PergolaRoof {
     this.louverY = [];
     this.louverX = [];
     this.solidRoof = [];
+
+    this.pointLED = [];
+    this.rampLEDX = [];
+    this.rampLEDY = [];
   }
 }
 
@@ -8470,7 +8956,8 @@ function calculateImageScale(
 ) {
   return Math.min(targetWidth / originalWidth, targetHeight / originalHeight);
 }
-export async function createPDF() {
+
+async function createPDF() {
   await CreateImageList();
 
   const pdfDoc = await PDFDocument.create();
@@ -9088,8 +9575,10 @@ export async function CreateImageList() {
 
   const deltaDist = ConvertMorphValue(state.height, 8, 15, 4.5, 8.0);
   const deltaY = ConvertMorphValue(state.height, 8, 15, 0.5, 2.0);
+
   const dist = (sizeValue / 40) * 10 + deltaDist;
 
+  console.log(canvas);
   const cameraImageViews_Global = [
     {
       id: "view_1.png",
@@ -9103,44 +9592,24 @@ export async function CreateImageList() {
       position: new THREE.Vector3(dist / 1.7, 0 + deltaY, dist / 1.7),
       rotation: new THREE.Vector3(0, Math.PI / 4.25, 0),
     },
+    {
+      id: "view_top.png",
+      alt: "view from top",
+      cameraObject: new THREE.PerspectiveCamera(
+        fov,
+        canvas.width / canvas.height,
+        0.01,
+        1000
+      ),
+      position: new THREE.Vector3(0, dist * 1.1, 0),
+      rotation: new THREE.Vector3(-Math.PI / 2, 0, 0),
+      rotate: true,
+    },
   ];
 
   share_RenderImages = [];
 
-  // pergola.changeMountingWall(false, false, false, false);
-
-  // //#region HIDE WALL
-  // state.backWall = false;
-  // state.leftWall = false;
-  // state.rightWall = false;
-
-  // const activeWallClass = "type_interface_checkbox-wall_item--active";
-  // const backWall = $("#back");
-  // const leftWall = $("#left");
-  // const rightWall = $("#right");
-
-  // function toggleClass(item, settings) {
-  //   if (settings) {
-  //     item.addClass(activeWallClass);
-  //   } else {
-  //     item.removeClass(activeWallClass);
-  //   }
-  // }
-
-  // // INIT BUTTONS WALL
-  // toggleBackWall(state.backWall);
-  // toggleLeftWall(state.leftWall);
-  // toggleRightWall(state.rightWall);
-
-  // updateTextParam(state, backWall);
-
-  // toggleClass(backWall, state.backWall);
-  // toggleClass(leftWall, state.leftWall);
-  // toggleClass(rightWall, state.rightWall);
-  // //#endregion
-
-  let old_sceneTime = sceneTime;
-  changeSceneTime("Day");
+  pergola.update();
 
   for (let index = 0; index < cameraImageViews_Global.length; index++) {
     const element = cameraImageViews_Global[index];
@@ -9159,23 +9628,16 @@ export async function CreateImageList() {
       element.rotation.z
     );
 
-    changeDimmensionRender(true, element, index);
+    changeDimmensionRender(true, element, index, element.rotate);
     TakeImage(element, "ar_pop_share_image");
     await new Promise((resolve) => setTimeout(resolve, 1));
     changeDimmensionRender(false);
   }
 
-  console.log(share_RenderImages[0].src);
-
-  $("#js-summary-image-preview-1")
-    .find("img")
-    .attr("src", share_RenderImages[0].src);
-
   pdfImg.img = share_RenderImages[0].src;
+  pdfImgTop.img = share_RenderImages[1].src;
 
-  $("#js-summary-image-preview-1").find("img").eq(1).remove();
-
-  changeSceneTime(old_sceneTime);
+  // $("#js-summary-image-preview-1").find("img").eq(1).remove();
 }
 
 function TakeImage(view, img_class) {

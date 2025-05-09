@@ -1,16 +1,45 @@
 import $ from "jquery";
 import {
+  GetGroup,
   modelForExport,
   pergolaConst,
+  theModel,
   toggleLoad,
 } from "../../../core/3d-configurator";
 import { createPDF } from "../../../core/customFunctions/createPDF";
 import { state } from "../../../core/settings";
 import "./summaryPage.scss";
 import { loadFormData } from "./summary-page-portal/summaryPagePortal";
+import {
+  stringPostSize,
+  stringRoofType,
+  stringTypeModel,
+} from "../../Interface/interface";
+import {
+  stringNameFrameColor,
+  stringNameRoofColor,
+} from "../../Interface/interfaceItems/interfaceGroup/interfaceGroupInputs/interfaceGroupInputs";
 export let countLeds = {
   count: 0,
 };
+
+function countVisibleObjectsByName(scene, name, exactMatch = false) {
+  let count = 0;
+
+  scene.traverse((object) => {
+    if (!object.visible) return;
+
+    const isMatch = exactMatch
+      ? object.name === name
+      : object.name.includes(name);
+
+    if (isMatch) {
+      count++;
+    }
+  });
+
+  return count;
+}
 
 function countVisibleMeshes(model, nameGroup) {
   let visibleCount = 0;
@@ -34,7 +63,7 @@ function countVisibleMeshes(model, nameGroup) {
 }
 
 export function summaryPageComponent(container) {
-  const model = state.model ? "LiteShade™" : "TitanCover™";
+  const modelType = stringTypeModel[state.type3Dmodel];
   const wall =
     [
       state.backWall && "Back Wall",
@@ -42,9 +71,11 @@ export function summaryPageComponent(container) {
       state.rightWall && "Right Wall",
     ]
       .filter(Boolean)
-      .join(", ") || "-";
+      .join(", ") || "Freestanding";
+
   // const roof = state.model ? state.moodLight : "Louvered";
-  const size = `${state.width}' x ${state.length}' x ${state.height}'`;
+  const roofType = stringRoofType[state.roofType];
+  const postSize = stringPostSize[state.postSize];
   // const postSize = state.initValuePostSize.includes("6")
   //   ? `6' x 6'`
   //   : state.initValuePostSize.includes("8")
@@ -106,7 +137,7 @@ export function summaryPageComponent(container) {
   const summaryContent = $(`
     <div id="summary-content">
   <div class="sum__page" id="sum-page">
-    <h2 class="sum__page__title">Your Pergola Looks Amazing!</h2>
+    <h2 class="sum__page__title">Summary</h2>
     <div class="sum__page__close" id="sum-close"></div>
 
     <div id="js-summary-image-preview-1">
@@ -115,123 +146,140 @@ export function summaryPageComponent(container) {
 
     <ul class="sum__page__main-list">
       <li class="sum__page__main-list__item">
-        <h3 class="sum__page__main-list__item__title">Wall Mounted</h3>
-        <div class="sum__page__main-list__item__param">${wall}</div>
+        <p class="sum__page__main-list__title">Manufacturer</p>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">Type</h3>
+          <div class="sum__page__main-list__info__param">${modelType}</div>
+        </div>
+      </li>
+
+     <li class="sum__page__main-list__item">
+        <p class="sum__page__main-list__title">Wall</p>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">Type</h3>
+          <div class="sum__page__main-list__info__param">${wall}</div>
+        </div>
+      </li>
+
+    <li class="sum__page__main-list__item">
+        <p class="sum__page__main-list__title">Roof Type</p>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">Type</h3>
+          <div class="sum__page__main-list__info__param">${roofType}</div>
+        </div>
+      </li>
+
+    <li class="sum__page__main-list__item">
+        <p class="sum__page__main-list__title">Dimensions</p>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">Width</h3>
+          <div class="sum__page__main-list__info__param">${state.width}'</div>
+        </div>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">Projection</h3>
+          <div class="sum__page__main-list__info__param">${state.length}'</div>
+        </div>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">Height</h3>
+          <div class="sum__page__main-list__info__param">${state.height}'</div>
+        </div>
       </li>
 
       <li class="sum__page__main-list__item">
-        <h3 class="sum__page__main-list__item__title">Dimensions</h3>
-        <div class="sum__page__main-list__item__param">${size}</div>
+        <p class="sum__page__main-list__title">Post size</p>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">Size</h3>
+          <div class="sum__page__main-list__info__param">${postSize}</div>
+        </div>
       </li>
 
       <li class="sum__page__main-list__item">
-        <h3 class="sum__page__main-list__item__title">Frame Color</h3>
-        <div class="sum__page__main-list__item__param">${frameColor}</div>
+        <p class="sum__page__main-list__title">Frame color</p>
+
+        <div class="sum__page__main-list__info"> 
+          <div class="sum__page__main-list__info__color" style="background-color: ${
+            state.colorBody
+          }"></div>
+          <div class="sum__page__main-list__info__param">${stringNameFrameColor}</div>
+        </div>
       </li>
 
       <li class="sum__page__main-list__item">
-        <h3 class="sum__page__main-list__item__title">Roof Color</h3>
-        <div class="sum__page__main-list__item__param">${roofColor}</div>
+        <p class="sum__page__main-list__title">Roof color</p>
+
+        <div class="sum__page__main-list__info"> 
+          <div class="sum__page__main-list__info__color" style="background-color: ${
+            state.colorRoof
+          }"></div>
+          <div class="sum__page__main-list__info__param">${stringNameRoofColor}</div>
+        </div>
+      </li>
+
+      <li class="sum__page__main-list__item">
+        <p class="sum__page__main-list__title">Extra Options</p>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">LED Ramp Light</h3>
+          <div class="sum__page__main-list__info__param">${
+            countVisibleObjectsByName(theModel, "LED_ramp", true) +
+              countVisibleObjectsByName(theModel, "LED_ramp_Y", true) || "No"
+          }</div>
+        </div>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">Fan</h3>
+          <div class="sum__page__main-list__info__param">${
+            countVisibleObjectsByName(theModel, "fan", true) - 1 || "No"
+          }</div>
+        </div>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">Privacy Wall</h3>
+          <div class="sum__page__main-list__info__param">${
+            countVisibleObjectsByName(theModel, "privacy_wall_frame", true) +
+              countVisibleObjectsByName(
+                theModel,
+                "privacy_wall_frame_side",
+                true
+              ) || "No"
+          }</div>
+        </div>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">LED Recessed</h3>
+          <div class="sum__page__main-list__info__param">${
+            countVisibleObjectsByName(theModel, "point-light", true) - 1 || "No"
+          }</div>
+        </div>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">LED Strip</h3>
+          <div class="sum__page__main-list__info__param">${
+            GetGroup("header").children[1].visible ? "Yes" : "No"
+          }</div>
+        </div>
+
+        <div class="sum__page__main-list__info"> 
+          <h3 class="sum__page__main-list__info__title">Automated Screens</h3>
+          <div class="sum__page__main-list__info__param">${
+            countVisibleObjectsByName(theModel, "zip_shade", true) +
+              countVisibleObjectsByName(theModel, "zip_shade_side", true) -
+              2 || "No"
+          }</div>
+        </div>
       </li>
     </ul>
-
-    <div class="sum__page__electrical-options">
-      <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--el">Electrical Options</h3>
-      
-      <ul class="sum__page__main-list">
-        <li class="sum__page__main-list__item sum__page__main-list__item--lil">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil">LED Lights</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil">${ledLight}</div>
-        </li>
-
-        ${
-          state.ledLights
-            ? `
-            <li class="sum__page__main-list__item sum__page__main-list__item--lil" style="margin-left: 15px">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil sum__page__main-list__item__param--color">Frequency</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil sum__page__main-list__item__param--color">${frequency}</div>
-        </li>
-          `
-            : ""
-        }
-      
-         ${
-           state.moodLight
-             ? `
-            <li class="sum__page__main-list__item sum__page__main-list__item--lil" style="margin-left: 15px">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil sum__page__main-list__item__param--color">Brightness</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil sum__page__main-list__item__param--color">${brightness}</div>
-        </li>`
-             : ""
-         }
-      
-
-        <li class="sum__page__main-list__item sum__page__main-list__item--lil">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil">Fans</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil">${fans}</div>
-        </li>
-
-        <li class="sum__page__main-list__item sum__page__main-list__item--lil">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil">Heaters</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil">${heaters}</div>
-        </li>
-      </ul>
-    </div> 
-
-    <div class="sum__page__electrical-options">
-      <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--el">Accessories</h3>
-      
-      <ul class="sum__page__main-list">
-        <li class="sum__page__main-list__item sum__page__main-list__item--lil">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil">Motorized Zip Screen</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil">${motorized}</div>
-        </li>
-
-        <li class="sum__page__main-list__item sum__page__main-list__item--lil" style="margin-left: 15px">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil color-option">Color</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil color-option">${colorZip}</div>
-        </li>
-
-        <li class="sum__page__main-list__item sum__page__main-list__item--lil" style="margin-left: 15px">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil color-option">Transparency</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil color-option">${transparency}</div>
-        </li>
-
-        <li class="sum__page__main-list__item sum__page__main-list__item--lil">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil">Sliding Glass Door</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil">${slidingGlassDoor}</div>
-        </li>
-
-        <li class="sum__page__main-list__item sum__page__main-list__item--lil">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil">Bi-folding Glass Door</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil">${bifoldingGlassDoor}</div>
-        </li>
-
-        <li class="sum__page__main-list__item sum__page__main-list__item--lil">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil">Fixed Shutters</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil">${fixedShutters}</div>
-        </li>
-
-        <li class="sum__page__main-list__item sum__page__main-list__item--lil">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil">Sliding Shutters</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil">${slidingShutters}</div>
-        </li>
-
-        <li class="sum__page__main-list__item sum__page__main-list__item--lil">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil">Bi-folding Shutters</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil">${biFoldingShutters}</div>
-        </li>
-
-        <li class="sum__page__main-list__item sum__page__main-list__item--lil">
-          <h3 class="sum__page__main-list__item__title sum__page__main-list__item__title--lil">Fixed Slats</h3>
-          <div class="sum__page__main-list__item__param sum__page__main-list__item__param--lil">${fixedSlats}</div>
-        </li>
-      </ul>
-    </div> 
-
+  
     <div class="sum__page__buttons">
-      <button class="sum__page__buttons__button sum__page__buttons__button--back" id="back-bt">Back To Configurator</button>
-      <button class="sum__page__buttons__button sum__page__buttons__button--contact" id="contact-bt">Contact us</button>
+      <button class="sum__page__buttons__button sum__page__buttons__button--back" id="back-bt">Back</button>
+      <button class="sum__page__buttons__button sum__page__buttons__button--contact" id="contact-bt">Request Quote</button>
       <button class="sum__page__buttons__button" id="dw-bt">Download PDF</button>
     </div>
   </div>
@@ -268,7 +316,12 @@ export function summaryPageComponent(container) {
 
   downloadButton.on("click", async () => {
     toggleLoad(true);
-    await createPDF();
+    //OPEN FORM
+    $("#sum-portal").show();
+
+    $("body").removeClass("body-overflow-auto");
+
+    // await createPDF();
     toggleLoad(false);
   });
 

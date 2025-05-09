@@ -14,7 +14,7 @@
   border: none;
   color: vars.$white-color;
   @include mixins.h4;
-  @include mixins.radius();
+  border-radius: 30px;
   font-size: 17px;
   border: 1px solid vars.$second-color-1;
   transition: all 0.3s;

@@ -29,26 +29,29 @@ export function loadFormData(container) {
   }
 }
 
-export function summaryPagePortalComponent(container, comment = true) {
+export function summaryPagePortalComponent(container, downloadPDF = true) {
   const html = $(`
     <div class='summary-portal' id='${
-      comment ? "sum-portal-with-comment" : "sum-portal"
+      downloadPDF ? "sum-portal-with-comment" : "sum-portal"
     }'>
       <div class="form-container">
         <form class="form" id="form">
           <div class="form__header">
             <h2 class="form__header__title">${
-              comment
-                ? "Fill in details below and we will contact you:"
-                : "Fill in details to view summary:"
+              downloadPDF
+                ? "Fill in details below to Request a quote:"
+                : "Fill in details below to Download PDF:"
             }</h2>
 
             <button type="button" id="closeForm" class="form__header__close"></button>
           </div>
-
+          
+          ${
+            downloadPDF
+              ? `
           <div class="form__top">
               <div class="form__group">
-                <input class="form__input" type="text" id="firstname" name="firstname" class="form-control" placeholder="First & Last name">
+                <input class="form__input" type="text" id="firstname" name="firstname" class="form-control" placeholder="First & Last name*">
               </div>
 
               <div class="form__group">
@@ -56,24 +59,34 @@ export function summaryPagePortalComponent(container, comment = true) {
               </div>
           </div>
 
-          <div class="form__top">
             <div class="form__group">
-              <input class="form__input" type="email" id="email" name="email" class="form-control" placeholder="Email">
+              <input class="form__input" type="email" id="email" name="email" class="form-control" placeholder="Email*">
             </div>
 
+            <div class="form__group">
+              <input class="form__input" type="text" id="adress" name="adress" class="form-control" placeholder="Address*">
+            </div>
+          
+          <div class="form__top">
             <div class="form__group">
               <input class="form__input" type="text" id="zip-code" name="zip-code" class="form-control" placeholder="Zip-code">
             </div>
-          </div>
 
-           ${
-             comment
-               ? `<div class="form__group">
-              <input class="form__input" type="textarea" id="comment" name="comment" class="form-control" placeholder="Comments">
+            <div class="form__group">
+              <input class="form__input" type="text" id="city" name="city" class="form-control" placeholder="City*">
             </div>
-`
-               : ``
-           } 
+          </div>`
+              : `
+              <div class="form__group">
+                <input class="form__input" type="text" id="firstname" name="firstname" class="form-control" placeholder="First & Last name*">
+              </div>
+
+              <div class="form__group">
+                <input class="form__input" type="email" id="email" name="email" class="form-control" placeholder="Email*">
+              </div>
+          `
+          }
+     
 
           <div class="form__check">
             <input type="checkbox" id="agree" name="agree" class="form__check-input">
@@ -85,7 +98,7 @@ I consent to Chaya Outdoors LLC using my personal information for sales, marketi
           <div class="form__buttons">
             <button type="button" id="cancelButton" class="form__buttons__button form__buttons__button--back">Cancel</button>
             <button type="submit" class="form__buttons__button">${
-              comment ? "Contact" : "View summary"
+              downloadPDF ? "Request Quote" : "Download PDF"
             }</button>
           </div>
         </form>
@@ -107,6 +120,22 @@ I consent to Chaya Outdoors LLC using my personal information for sales, marketi
     "Please enter a valid phone number (10 digits)."
   );
 
+  $.validator.addMethod(
+    "adress",
+    function (value, element) {
+      return this.optional(element) || value.length > 4;
+    },
+    "Please enter a valid address."
+  );
+
+  $.validator.addMethod(
+    "zipCode",
+    function (value, element) {
+      return this.optional(element) || /^[0-9]{4,10}$/.test(value);
+    },
+    "Please enter a valid zip code."
+  );
+
   form.validate({
     rules: {
       firstname: {
@@ -120,6 +149,18 @@ I consent to Chaya Outdoors LLC using my personal information for sales, marketi
       email: {
         required: true,
         email: true,
+      },
+      adress: {
+        required: true,
+        adress: true,
+      },
+      "zip-code": {
+        required: true,
+        zipCode: true,
+      },
+      city: {
+        required: true,
+        minlength: 2,
       },
       agree: {
         required: true,
@@ -141,6 +182,18 @@ I consent to Chaya Outdoors LLC using my personal information for sales, marketi
         required: "Please enter your email",
         email: "Please enter a valid email address",
       },
+      adress: {
+        required: "Please enter your address",
+        adress: "Address must be more than 4 characters",
+      },
+      "zip-code": {
+        required: "Please enter your zip code",
+        zipCode: "Zip code must be 4 to 10 digits",
+      },
+      city: {
+        required: "Please enter your city",
+        minlength: "City name must be at least 2 characters long",
+      },
       agree: {
         required: "You must agree to the terms and conditions",
       },
@@ -150,15 +203,16 @@ I consent to Chaya Outdoors LLC using my personal information for sales, marketi
 
       saveFormData();
 
-      if (!comment) {
-        html.hide();
-      } else {
-        toggleLoad(true);
+      if (!downloadPDF) {
+        console.log("dowloan PDF");
 
-        // await createPDF();
+        toggleLoad(true);
+        await createPDF("download");
 
         toggleLoad(false);
 
+        html.hide();
+      } else {
         alert("Form has been submitted without redirect!");
 
         html.hide();
@@ -170,7 +224,7 @@ I consent to Chaya Outdoors LLC using my personal information for sales, marketi
   const closeButton = html.find("#closeForm");
 
   closeButton.on("click", function () {
-    if (!comment) {
+    if (false) {
       toggleLoad(true);
       $("html, body").animate({ scrollTop: 0 }, "fast", () => {
         $("#summary-content").hide();
@@ -185,7 +239,7 @@ I consent to Chaya Outdoors LLC using my personal information for sales, marketi
   });
 
   cancelButton.on("click", function () {
-    if (!comment) {
+    if (false) {
       toggleLoad(true);
       $("html, body").animate({ scrollTop: 0 }, "fast", () => {
         $("#summary-content").hide();

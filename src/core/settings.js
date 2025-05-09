@@ -17,6 +17,7 @@ export const settingsLouver = {
 
 export const log = false;
 export let pdfImg = { img: "" };
+export let pdfImgTop = { img: "" };
 
 //#region URL AND STATE
 let isBatchUpdating = false;
