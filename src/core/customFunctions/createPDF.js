@@ -414,14 +414,11 @@ const pdf_icon_email_url =
   "https://royalcovers.com/wp-content/uploads/2025/03/mail.png";
 
 export async function createPDF(opt = "open") {
-  // await CreateImageList();
-
-  console.log(pdfImg.img, pdfImgTop.img);
+  await CreateImageList();
 
   const uiPdfPhone = "(713) 893-1915";
   const uiPdfEmail = "info@koolcovers.com";
   const uiPdfWeb = "www.koolcovershouston.com";
-
   const mainMargins = [30, 130, 30, 60];
 
   const imageUrls = [
@@ -432,439 +429,327 @@ export async function createPDF(opt = "open") {
     pdf_water_mark_url,
   ];
 
-  // pdfMake.vfs = pdfFonts.pdfMake.vfs;
+  const imageDataUrls = await Promise.all(
+    imageUrls.map(async (imageUrl) => {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      return await new Promise((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    })
+  );
 
-  // pdfMake.fonts = {
-  //   Roboto: {
-  //     bold: "Roboto-Medium.ttf",
-  //     italics: "Roboto-Italic.ttf",
-  //     bolditalics: "Roboto-MediumItalic.ttf",
-  //   },
-  // };
+  const [
+    logoImage,
+    websiteIconImage,
+    phoneIconImage,
+    emailIconImage,
+    waterMarkImage,
+  ] = imageDataUrls;
 
-  const promises = imageUrls.map(async (imageUrl) => {
-    const response = await fetch(imageUrl);
-    const blob = await response.blob();
-    const reader = new FileReader();
-    return await new Promise((resolve, reject) => {
-      reader.onloadend = function () {
-        resolve(reader.result);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  });
-
-  function metersToInches(meters) {
-    const inchesPerMeter = 39.3701;
-    return Math.round(meters * inchesPerMeter);
+  function rgbToHex(rgb) {
+    const result = rgb.match(/\d+/g);
+    if (!result) return "#000000";
+    return `#${parseInt(result[0]).toString(16).padStart(2, "0")}${parseInt(
+      result[1]
+    )
+      .toString(16)
+      .padStart(2, "0")}${parseInt(result[2]).toString(16).padStart(2, "0")}`;
   }
 
-  const { span_width, span_depth } = pergola.getSpanPoints();
+  const footerColorWhite = "#ffffff";
+  const footerColor = "#06AEEF";
 
-  Promise.all(promises)
-    .then(
-      ([
-        logoImage,
-        websiteIconImage,
-        phoneIconImage,
-        emailIconImage,
-        waterMarkImge,
-      ]) => {
-        const headerContent = {
-          stack: [
-            {
-              image: logoImage,
-              width: 80,
-              margin: [0, 0, 0, 0],
-            },
-          ],
-          alignment: "center",
-        };
-
-        let textColorForZip = "";
-
-        $(".ar_filter_group_13")
-          .find(".ar_filter_options .option")
-          .each(function () {
-            const $this = $(this);
-
-            if ($this.hasClass("active")) {
-              textColorForZip = $this.find(".component_title").text();
-            }
-          });
-
-        const valueColor = "#0B70A2";
-        const footerColor = "#06AEEF";
-        const footerColorWhite = "#FFFFFF";
-
-        function rgbToHex(rgb) {
-          const result = rgb.match(/\d+/g);
-
-          const red = parseInt(result[0]).toString(16).padStart(2, "0");
-          const green = parseInt(result[1]).toString(16).padStart(2, "0");
-          const blue = parseInt(result[2]).toString(16).padStart(2, "0");
-
-          return `#${red}${green}${blue}`;
-        }
-
-        const footerContent = function () {
-          return [
-            {
-              margin: [0, 0, 0, 0],
-              table: {
-                widths: [12, "auto", "*", 12, "auto", "*", 12, "auto"],
-                body: [
-                  [
-                    {
-                      image: phoneIconImage,
-                      margin: [0, 25, -30, 30],
-                      width: 8,
-                      height: 8,
-                      alignment: "center",
-                      style: "footer",
-                    },
-                    {
-                      text: uiPdfPhone,
-                      margin: [30, 25, 0, 30],
-                      alignment: "center", // ÃƒÂÃ‚Â¦ÃƒÂÃ‚ÂµÃƒÂÃ‚Â½Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã¢â€šÂ¬Ãƒâ€˜Ã†â€™ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â½Ãƒâ€˜Ã‚Â Ãƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚ÂµÃƒÂÃ‚ÂºÃƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã†â€™
-                      style: "footer",
-                      color: footerColorWhite, // ÃƒÂÃ¢â‚¬ËœÃƒâ€˜Ã¢â‚¬â€œÃƒÂÃ‚Â»ÃƒÂÃ‚Â¸ÃƒÂÃ‚Â¹ ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â»Ãƒâ€˜Ã¢â‚¬â€œÃƒâ€˜Ã¢â€šÂ¬ Ãƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚ÂµÃƒÂÃ‚ÂºÃƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã†â€™
-                    },
-                    { text: "" },
-                    {
-                      image: emailIconImage,
-                      width: 8,
-                      height: 8,
-                      alignment: "center", // ÃƒÂÃ‚Â¦ÃƒÂÃ‚ÂµÃƒÂÃ‚Â½Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã¢â€šÂ¬Ãƒâ€˜Ã†â€™ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â½Ãƒâ€˜Ã‚Â Ãƒâ€˜Ã¢â‚¬â€œÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â½ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¸
-                      margin: [0, 25, 0, 30],
-                    },
-                    {
-                      text: uiPdfEmail,
-                      link: `mailto:${uiPdfEmail}`,
-                      margin: [0, 25, 0, 30],
-                      alignment: "center", // ÃƒÂÃ‚Â¦ÃƒÂÃ‚ÂµÃƒÂÃ‚Â½Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã¢â€šÂ¬Ãƒâ€˜Ã†â€™ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â½Ãƒâ€˜Ã‚Â Ãƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚ÂµÃƒÂÃ‚ÂºÃƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã†â€™
-                      style: "footer",
-                      color: footerColorWhite, // ÃƒÂÃ¢â‚¬ËœÃƒâ€˜Ã¢â‚¬â€œÃƒÂÃ‚Â»ÃƒÂÃ‚Â¸ÃƒÂÃ‚Â¹ ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â»Ãƒâ€˜Ã¢â‚¬â€œÃƒâ€˜Ã¢â€šÂ¬ Ãƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚ÂµÃƒÂÃ‚ÂºÃƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã†â€™
-                    },
-                    { text: "" },
-                    {
-                      image: websiteIconImage,
-                      width: 8,
-                      height: 8,
-                      alignment: "center", // ÃƒÂÃ‚Â¦ÃƒÂÃ‚ÂµÃƒÂÃ‚Â½Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã¢â€šÂ¬Ãƒâ€˜Ã†â€™ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â½Ãƒâ€˜Ã‚Â Ãƒâ€˜Ã¢â‚¬â€œÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â½ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¸
-                      margin: [0, 25, 0, 30],
-                    },
-                    {
-                      text: uiPdfWeb,
-                      link: uiPdfWeb,
-                      margin: [0, 25, 30, 30],
-                      alignment: "center", // ÃƒÂÃ‚Â¦ÃƒÂÃ‚ÂµÃƒÂÃ‚Â½Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã¢â€šÂ¬Ãƒâ€˜Ã†â€™ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â½Ãƒâ€˜Ã‚Â Ãƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚ÂµÃƒÂÃ‚ÂºÃƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã†â€™
-                      style: "footer",
-                      color: footerColorWhite, // ÃƒÂÃ¢â‚¬ËœÃƒâ€˜Ã¢â‚¬â€œÃƒÂÃ‚Â»ÃƒÂÃ‚Â¸ÃƒÂÃ‚Â¹ ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â»Ãƒâ€˜Ã¢â‚¬â€œÃƒâ€˜Ã¢â€šÂ¬ Ãƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚ÂµÃƒÂÃ‚ÂºÃƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã†â€™
-                    },
-                  ],
-                ],
-              },
-              fillColor: footerColor,
-              layout: "noBorders", // ÃƒÂÃ¢â‚¬ËœÃƒÂÃ‚ÂµÃƒÂÃ‚Â· ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾Ãƒâ€˜Ã¢â€šÂ¬ÃƒÂÃ‚Â´ÃƒÂÃ‚Â¾ÃƒÂÃ‚Â½Ãƒâ€˜Ã¢â‚¬â€œÃƒÂÃ‚Â²
-            },
-          ];
-        };
-
-        function generatePDFcontentFromOverview() {
-          const itemsOverview = $(".sum__page__main-list__item");
-          const content = [];
-
-          itemsOverview.each(function () {
-            const title = $(this)
-              .find(".sum__page__main-list__title")
-              .text()
-              .toUpperCase();
-
-            const list = $(this).find(".sum__page__main-list__info");
-            const itemList = [];
-
-            list.each(function () {
-              const title = $(this)
-                .find(".sum__page__main-list__info__title")
-                .text();
-              const backgroundColorTitle = $(this)
-                .find(".sum__page__main-list__info__color")
-                .css("background-color");
-
-              const value = $(this)
-                .find(".sum__page__main-list__info__param")
-                .text();
-
-              const result = [];
-
-              if (
-                backgroundColorTitle &&
-                backgroundColorTitle !== "rgba(0, 0, 0, 0)"
-              ) {
-                const colorHex = rgbToHex(backgroundColorTitle);
-
-                function generateEllipseImage(colorHex) {
-                  const canvas = document.createElement("canvas");
-                  const ctx = canvas.getContext("2d");
-
-                  const width = 20;
-                  const height = 20;
-                  const radiusX = 9; // Ã ÃÂ°ÃÂ´Ã‘â€“Ã‘Æ’Ã‘Â ÃÂ¿ÃÂ¾ ÃÂ¾Ã‘ÂÃ‘â€“ X (ÃÂ¿ÃÂ¾ÃÂ»ÃÂ¾ÃÂ²ÃÂ¸ÃÂ½ÃÂ° Ã‘Ë†ÃÂ¸Ã‘â‚¬ÃÂ¸ÃÂ½ÃÂ¸ ÃÂµÃÂ»Ã‘â€“ÃÂ¿Ã‘ÂÃÂ°)
-                  const radiusY = 9; // Ã ÃÂ°ÃÂ´Ã‘â€“Ã‘Æ’Ã‘Â ÃÂ¿ÃÂ¾ ÃÂ¾Ã‘ÂÃ‘â€“ Y (ÃÂ¿ÃÂ¾ÃÂ»ÃÂ¾ÃÂ²ÃÂ¸ÃÂ½ÃÂ° ÃÂ²ÃÂ¸Ã‘ÂÃÂ¾Ã‘â€šÃÂ¸ ÃÂµÃÂ»Ã‘â€“ÃÂ¿Ã‘ÂÃÂ°)
-
-                  canvas.width = width;
-                  canvas.height = height;
-
-                  ctx.beginPath();
-                  ctx.ellipse(
-                    width / 2,
-                    height / 2,
-                    radiusX,
-                    radiusY,
-                    0,
-                    0,
-                    Math.PI * 2
-                  );
-                  ctx.fillStyle = colorHex;
-                  ctx.fill();
-                  ctx.lineWidth = 0;
-
-                  return canvas.toDataURL("image/png");
-                }
-
-                const ellipseImg = generateEllipseImage(colorHex);
-
-                result.push({
-                  image: ellipseImg,
-                  width: 20,
-                  height: 20,
-                  alignment: "left",
-                  style: "itemValue",
-                  margin: [0, 0, 0, 0],
-                  border: [false, false, false, false],
-                });
-              } else {
-                result.push({
-                  text: title,
-                  style: "itemFirst",
-                  border: [false, false, false, false],
-                });
-              }
-
-              result.push({
-                text: value,
-                style: "itemValueFirst",
-                border: [false, false, false, false],
-              });
-
-              itemList.push(result);
-            });
-
-            const result = {
-              style: "tableItemLeft",
-              table: {
-                widths: "*",
-                body: [
-                  [
-                    {
-                      text: title,
-                      style: "tableHeader",
-                      colSpan: 2,
-                      border: [false, false, false, false],
-                    },
-                    {
-                      text: "",
-                      fillColor: "#476593",
-                      height: 0,
-                      colSpan: 2,
-                      border: [false, false, false, false],
-                    },
-                  ],
-                  [
-                    {
-                      text: "",
-                      colSpan: 2,
-                      border: [false, true, false, false],
-                      height: 1,
-                      style: "lineStyle",
-                    },
-                    // {
-                    //   text: "",
-                    //   colSpan: 2,
-                    //   border: [false, false, false, false],
-                    // },
-                  ],
-                  ...itemList,
-                ],
-              },
-            };
-
-            content.push(result);
-          });
-
-          return content;
-        }
-
-        const pdfContent = [
-          {
-            margin: [40, 0, 0, 0],
-            columns: [
+  const footerContent = function () {
+    return [
+      {
+        margin: [0, 0, 0, 0],
+        table: {
+          widths: [12, "auto", "*", 12, "auto", "*", 12, "auto"],
+          body: [
+            [
               {
-                image: pdfImg.img,
-                width: 250,
-                height: 120, // Встановлюємо висоту
-                margin: [0, 0, 0, 0],
+                image: phoneIconImage,
+                margin: [0, 25, -30, 30],
+                width: 8,
+                height: 8,
+                alignment: "center",
+                style: "footer",
               },
               {
-                image: pdfImgTop.img,
-                width: 250,
-                height: 120, // Встановлюємо висоту
-                margin: [0, 0, 0, 0],
+                text: uiPdfPhone,
+                margin: [30, 25, 0, 30],
+                alignment: "center", // ÃƒÂÃ‚Â¦ÃƒÂÃ‚ÂµÃƒÂÃ‚Â½Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã¢â€šÂ¬Ãƒâ€˜Ã†â€™ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â½Ãƒâ€˜Ã‚Â Ãƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚ÂµÃƒÂÃ‚ÂºÃƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã†â€™
+                style: "footer",
+                color: footerColorWhite, // ÃƒÂÃ¢â‚¬ËœÃƒâ€˜Ã¢â‚¬â€œÃƒÂÃ‚Â»ÃƒÂÃ‚Â¸ÃƒÂÃ‚Â¹ ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â»Ãƒâ€˜Ã¢â‚¬â€œÃƒâ€˜Ã¢â€šÂ¬ Ãƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚ÂµÃƒÂÃ‚ÂºÃƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã†â€™
+              },
+              { text: "" },
+              {
+                image: emailIconImage,
+                width: 8,
+                height: 8,
+                alignment: "center", // ÃƒÂÃ‚Â¦ÃƒÂÃ‚ÂµÃƒÂÃ‚Â½Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã¢â€šÂ¬Ãƒâ€˜Ã†â€™ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â½Ãƒâ€˜Ã‚Â Ãƒâ€˜Ã¢â‚¬â€œÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â½ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¸
+                margin: [0, 25, 0, 30],
               },
               {
-                image: waterMarkImge,
-                width: 80,
-                height: 80, // Встановлюємо висоту watermark
-                absolutePosition: { x: 150, y: 160 }, // Вказуємо позицію поверх першого зображення
-                margin: [0, 0, 0, 0],
-                rotate: 45, // Обертання на 45 градусів
-                opacity: 1, // Прозорість watermark
-                zIndex: 99, // Забезпечуємо, щоб watermark був поверх зображень
+                text: uiPdfEmail,
+                link: `mailto:${uiPdfEmail}`,
+                margin: [0, 25, 0, 30],
+                alignment: "center", // ÃƒÂÃ‚Â¦ÃƒÂÃ‚ÂµÃƒÂÃ‚Â½Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã¢â€šÂ¬Ãƒâ€˜Ã†â€™ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â½Ãƒâ€˜Ã‚Â Ãƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚ÂµÃƒÂÃ‚ÂºÃƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã†â€™
+                style: "footer",
+                color: footerColorWhite, // ÃƒÂÃ¢â‚¬ËœÃƒâ€˜Ã¢â‚¬â€œÃƒÂÃ‚Â»ÃƒÂÃ‚Â¸ÃƒÂÃ‚Â¹ ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â»Ãƒâ€˜Ã¢â‚¬â€œÃƒâ€˜Ã¢â€šÂ¬ Ãƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚ÂµÃƒÂÃ‚ÂºÃƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã†â€™
+              },
+              { text: "" },
+              {
+                image: websiteIconImage,
+                width: 8,
+                height: 8,
+                alignment: "center", // ÃƒÂÃ‚Â¦ÃƒÂÃ‚ÂµÃƒÂÃ‚Â½Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã¢â€šÂ¬Ãƒâ€˜Ã†â€™ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â½Ãƒâ€˜Ã‚Â Ãƒâ€˜Ã¢â‚¬â€œÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â½ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¸
+                margin: [0, 25, 0, 30],
               },
               {
-                image: waterMarkImge,
-                width: 80,
-                height: 80, // Встановлюємо висоту watermark
-                absolutePosition: { x: 400, y: 160 }, // Вказуємо позицію поверх другого зображення
-                margin: [0, 0, 0, 0],
-                rotate: 45, // Обертання на 45 градусів
-                opacity: 1, // Прозорість watermark
-                zIndex: 99, // Забезпечуємо, щоб watermark був поверх зображень
+                text: uiPdfWeb,
+                link: uiPdfWeb,
+                margin: [0, 25, 30, 30],
+                alignment: "center", // ÃƒÂÃ‚Â¦ÃƒÂÃ‚ÂµÃƒÂÃ‚Â½Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã¢â€šÂ¬Ãƒâ€˜Ã†â€™ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â½Ãƒâ€˜Ã‚Â Ãƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚ÂµÃƒÂÃ‚ÂºÃƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã†â€™
+                style: "footer",
+                color: footerColorWhite, // ÃƒÂÃ¢â‚¬ËœÃƒâ€˜Ã¢â‚¬â€œÃƒÂÃ‚Â»ÃƒÂÃ‚Â¸ÃƒÂÃ‚Â¹ ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â»Ãƒâ€˜Ã¢â‚¬â€œÃƒâ€˜Ã¢â€šÂ¬ Ãƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚ÂµÃƒÂÃ‚ÂºÃƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã†â€™
               },
             ],
-          },
-          {
-            columns: [[...generatePDFcontentFromOverview()]],
-          },
-        ];
+          ],
+        },
+        fillColor: footerColor,
+        layout: "noBorders", // ÃƒÂÃ¢â‚¬ËœÃƒÂÃ‚ÂµÃƒÂÃ‚Â· ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾Ãƒâ€˜Ã¢â€šÂ¬ÃƒÂÃ‚Â´ÃƒÂÃ‚Â¾ÃƒÂÃ‚Â½Ãƒâ€˜Ã¢â‚¬â€œÃƒÂÃ‚Â²
+      },
+    ];
+  };
 
-        const fontSize = 10;
-
-        // -------------------------------------------------
-        const pdfDefinition = {
-          pageMargins: mainMargins,
-          header: headerContent,
-          content: pdfContent,
-          footer: footerContent,
-
-          styles: {
-            tableTitle: {
-              fontSize: 12,
-              bold: false,
-              font: "Roboto",
-              color: "#FFFFFF",
-            },
-            tableItemTitle: { fontSize: 12, bold: true, font: "Roboto" },
-            tableItemText: { fontSize: 12, bold: false, font: "Roboto" },
-            footer: { fontSize: 8, bold: false, font: "Roboto" },
-            header: {
-              fontSize: 18,
-              bold: true,
-              margin: [0, 0, 0, 10],
-            },
-            subheader: {
-              fontSize: 16,
-              bold: true,
-              margin: [0, 10, 0, 5],
-            },
-            tableExample: {
-              margin: [0, 5, 0, 15],
-            },
-            tableHeader: {
-              borderBottom: "1px solid #0B70A2",
-              bold: true,
-              fontSize: fontSize,
-              color: "black",
-              alignment: "center",
-              margin: [0, 5, 0, 8],
-            },
-            item: {
-              fontSize: fontSize,
-              color: "black",
-              alignment: "left",
-              margin: [0, 10, 0, 0],
-            },
-            itemFirst: {
-              fontSize: fontSize,
-              color: "black",
-              alignment: "left",
-              margin: [0, 0, 0, 0],
-            },
-            itemValue: {
-              fontSize: fontSize,
-              color: valueColor,
-              alignment: "right",
-              margin: [0, 10, 0, 0],
-            },
-            itemValueFirst: {
-              fontSize: fontSize,
-              color: valueColor,
-              alignment: "right",
-              margin: [0, 0, 0, 0],
-            },
-            tableItem: {
-              fontSize: fontSize,
-              width: 237,
-            },
-            tableItemRight: {
-              fontSize: 0,
-              margin: [0, 0, 0, 0],
-            },
-            tableItemLeft: {
-              fontSize: fontSize,
-              width: 237,
-              margin: [0, 0, 0, 0],
-            },
-            lineStyle: {
-              borderBottom: "0.5px solid #0B70A2",
-              borderTop: "0.5px solid #0B70A2",
-              marginBottom: 5,
-            },
-          },
-          defaultStyle: { font: "Roboto" },
-        };
-        // -------------------------------------------------
-        switch (opt) {
-          case "open":
-            pdfMake.createPdf(pdfDefinition).open();
-            break;
-
-          case "download":
-            pdfMake.createPdf(pdfDefinition).download("Royal Cover.pdf");
-            break;
-
-          case "all":
-            pdfMake.createPdf(pdfDefinition).getBlob((pdfBlob) => {
-              const urlForTab = URL.createObjectURL(pdfBlob);
-              window.open(urlForTab);
-
-              const link = document.createElement("a");
-              link.href = urlForTab;
-              link.download = "Royal Cover.pdf";
-              link.click();
-
-              URL.revokeObjectURL(urlForTab);
-            });
-            break;
-
-          default:
-            break;
-        }
-      }
-    )
-    .catch((error) => {
-      console.error("Image loading error:", error);
+  function loadImageAsDataUrl(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = () => reject("Image load error");
+      img.src = url;
     });
+  }
+
+  function generateEllipseImage(colorHex) {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = 20;
+    canvas.height = 20;
+    ctx.beginPath();
+    ctx.ellipse(10, 10, 9, 9, 0, 0, Math.PI * 2);
+    ctx.fillStyle = colorHex;
+    ctx.fill();
+    return canvas.toDataURL("image/png");
+  }
+
+  async function generatePDFcontentFromOverview() {
+    const itemsOverview = $(".sum__page__main-list__item");
+    const content = [];
+
+    for (const item of itemsOverview) {
+      const $item = $(item);
+      const title = $item
+        .find(".sum__page__main-list__title")
+        .text()
+        .toUpperCase();
+      const list = $item.find(".sum__page__main-list__info");
+      const itemList = [];
+
+      for (const info of list) {
+        const $info = $(info);
+        const infoTitle = $info
+          .find(".sum__page__main-list__info__title")
+          .text();
+        const $colorElement = $info.find(".sum__page__main-list__info__color");
+        const bgColor = $colorElement.css("background-color");
+        const bgImage = $colorElement.css("background-image");
+        const value = $info.find(".sum__page__main-list__info__param").text();
+
+        const result = [];
+
+        if (bgImage && bgImage !== "none") {
+          const match = bgImage.match(/url\(["']?(.*?)["']?\)/);
+          if (match && match[1]) {
+            let imageUrl = match[1].replace(/^public\//, "/");
+            try {
+              const imageDataUrl = await loadImageAsDataUrl(imageUrl);
+              result.push({
+                image: imageDataUrl,
+                width: 20,
+                height: 20,
+                alignment: "left",
+                style: "itemValue",
+                margin: [0, 0, 0, 0],
+                border: [false, false, false, false],
+              });
+            } catch {
+              result.push({ text: infoTitle, style: "itemFirst" });
+            }
+          }
+        } else if (
+          bgColor &&
+          bgColor !== "rgba(0, 0, 0, 0)" &&
+          bgColor !== "transparent"
+        ) {
+          const colorHex = rgbToHex(bgColor);
+          const ellipseImg = generateEllipseImage(colorHex);
+          result.push({
+            image: ellipseImg,
+            width: 20,
+            height: 20,
+            alignment: "left",
+            style: "itemValue",
+            margin: [0, 0, 0, 0],
+            border: [false, false, false, false],
+          });
+        } else {
+          result.push({
+            text: infoTitle,
+            style: "itemFirst",
+            border: [false, false, false, false],
+          });
+        }
+
+        result.push({
+          text: value,
+          style: "itemValueFirst",
+          border: [false, false, false, false],
+        });
+
+        itemList.push(result);
+      }
+
+      content.push({
+        style: "tableItemLeft",
+        table: {
+          widths: "*",
+          body: [
+            [
+              {
+                text: title,
+                style: "tableHeader",
+                colSpan: 2,
+                border: [false, false, false, false],
+              },
+              {},
+            ],
+            [
+              {
+                text: "",
+                colSpan: 2,
+                border: [false, true, false, false],
+                height: 1,
+                style: "lineStyle",
+              },
+              {},
+            ],
+            ...itemList,
+          ],
+        },
+      });
+    }
+
+    return content;
+  }
+
+  const overviewContent = await generatePDFcontentFromOverview();
+
+  const pdfContent = [
+    {
+      margin: [40, 0, 0, 0],
+      columns: [
+        { image: pdfImg.img, width: 250, height: 120, margin: [0, 0, 0, 0] },
+        { image: pdfImgTop.img, width: 250, height: 120, margin: [0, 0, 0, 0] },
+        {
+          image: waterMarkImage,
+          width: 80,
+          height: 80,
+          absolutePosition: { x: 150, y: 160 },
+          rotate: 45,
+          opacity: 1,
+        },
+        {
+          image: waterMarkImage,
+          width: 80,
+          height: 80,
+          absolutePosition: { x: 400, y: 160 },
+          rotate: 45,
+          opacity: 1,
+        },
+      ],
+    },
+    ...overviewContent,
+  ];
+
+  const pdfDefinition = {
+    pageMargins: mainMargins,
+    header: {
+      stack: [{ image: logoImage, width: 80 }],
+      alignment: "center",
+    },
+    content: pdfContent,
+    footer: footerContent(),
+    styles: {
+      tableHeader: {
+        fontSize: 10,
+        bold: true,
+        color: "black",
+        alignment: "center",
+        margin: [0, 5, 0, 8],
+      },
+      itemFirst: {
+        fontSize: 10,
+        color: "black",
+        alignment: "left",
+      },
+      itemValue: {
+        fontSize: 10,
+        color: "#0B70A2",
+        alignment: "right",
+      },
+      itemValueFirst: {
+        fontSize: 10,
+        color: "#0B70A2",
+        alignment: "right",
+      },
+      lineStyle: {
+        borderBottom: "0.5px solid #0B70A2",
+        borderTop: "0.5px solid #0B70A2",
+        marginBottom: 5,
+      },
+      tableItemLeft: {
+        fontSize: 10,
+        margin: [0, 0, 0, 0],
+      },
+    },
+    defaultStyle: {
+      font: "Roboto",
+    },
+  };
+
+  switch (opt) {
+    case "open":
+      pdfMake.createPdf(pdfDefinition).open();
+      break;
+    case "download":
+      pdfMake.createPdf(pdfDefinition).download("Kool Cover.pdf");
+      break;
+    case "print":
+      pdfMake.createPdf(pdfDefinition).print();
+      break;
+  }
 }

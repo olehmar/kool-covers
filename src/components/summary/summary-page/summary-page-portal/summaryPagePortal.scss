@@ -34,8 +34,14 @@
 
   &__header {
     &__title {
-      @include mixins.h3();
+      @include mixins.font-family-second();
+      font-weight: 400;
       font-size: 20px;
+      line-height: 100%;
+      letter-spacing: 0%;
+      vertical-align: bottom;
+      text-transform: uppercase;
+      color: vars.$second-color;
     }
 
     &__close {
@@ -105,8 +111,12 @@
     width: 18px;
     min-width: 18px;
     height: 18px;
-    border-radius: 3px;
-    border: 1px solid vars.$black-color-second; // Замінив на ваш варіант змінної
+    background-image: url(/public/img//icons//checkbox.svg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    margin-top: 4px;
+
     margin-right: 10px;
     position: relative;
     appearance: none; // Прибирає стандартний вигляд
@@ -114,28 +124,37 @@
     -moz-appearance: none;
 
     &:checked {
-      background-color: vars.$second-color; // Використовуємо вашу змінну для активного кольору
-      border-color: vars.$second-color; // Змінюємо колір рамки, якщо треба
+      background-image: url(/public/img//icons//checkbox-active.svg);
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+      width: 18px;
+      min-width: 18px;
+      height: 18px;
     }
 
-    &:checked::before {
-      content: "";
-      position: absolute;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      top: 4px;
-      left: 4px;
-      width: 8px;
-      height: 8px;
-      background-color: white; // Колір галочки
-      transform: rotate(45deg); // Поворот для створення вигляду галочки
-    }
+    // &:checked::before {
+    //   content: "";
+    //   background-image: url(/public/img//icons//checkbox-active.svg);
+    //   background-position: center;
+    //   background-repeat: no-repeat;
+    //   background-size: contain;
+    //   position: absolute;
+    //   display: flex;
+    //   justify-content: center;
+    //   align-items: center;
+    //   top: 4px;
+    //   left: 4px;
+    //   width: 8px;
+    //   height: 8px;
+    //   // background-color: white; // Колір галочки
+    //   // transform: rotate(45deg); // Поворот для створення вигляду галочки
+    // }
   }
 
   &__check {
     display: flex;
-    align-items: center;
+    align-items: self-start;
     margin-bottom: 20px;
 
     &__label {

@@ -218,10 +218,57 @@
   }
 }
 
+//POST SIZE BUTTON STYLES IN COLOR
+.type_interface_colors-buttons {
+  .type_interface_post-size {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+
+    &_item {
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      height: fit-content;
+      @include mixins.box-shadow(#11111129);
+      @include mixins.radius;
+      @include mixins.h3;
+      padding: 10px;
+
+      &--active {
+        transition: all 0.3s;
+        @include mixins.box-border(10, rgba(vars.$second-color, 1));
+        @include mixins.box-shadow(#0b70a229);
+        color: vars.$second-color;
+
+        &:hover {
+          transform: translate(0) !important;
+        }
+      }
+
+      label {
+        cursor: pointer;
+      }
+    }
+
+    &_option {
+      cursor: pointer;
+    }
+  }
+}
+
 .type_interface_colors-buttons {
   display: flex;
   flex-direction: column;
   gap: 30px;
+
+  .color-bottom {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
 
   #color-picker-container {
     display: none;
@@ -321,6 +368,7 @@
     align-items: center;
     cursor: pointer;
     @include mixins.h3;
+    max-width: 70px;
 
     .color-name {
       margin-top: 10px;

@@ -173,6 +173,7 @@ export const stateForProxy = {
   roofType: 0,
   postSize: 0,
   directionRoof: 0,
+  roofColorType: 0,
   currentRotationZ: 90,
   isRotated: false,
   height: 9,

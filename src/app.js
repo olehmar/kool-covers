@@ -10,6 +10,7 @@ import { initStateFromUrl } from "./core/customFunctions/paramsURL";
 import { shareArComponent } from "./components/shareAr/shareAr";
 import { summaryPagePortalComponent } from "./components/summary/summary-page/summary-page-portal/summaryPagePortal";
 import { getBrowserBarHeight } from "./core/customFunctions/customFunctions";
+
 const root = "#app";
 export const mainContent = $('<main class="main-content" id="content"></main>');
 const footer = $('<footer class="footer footer-h" id="footer"></footer>');

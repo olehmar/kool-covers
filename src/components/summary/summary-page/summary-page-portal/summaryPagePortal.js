@@ -203,6 +203,8 @@ I consent to Chaya Outdoors LLC using my personal information for sales, marketi
 
       saveFormData();
 
+      // sendFormDataToGoogleSheets();
+
       if (!downloadPDF) {
         console.log("dowloan PDF");
 
@@ -253,5 +255,34 @@ I consent to Chaya Outdoors LLC using my personal information for sales, marketi
       html.hide();
       $("body").addClass("body-overflow-auto");
     }
+  });
+}
+
+function sendFormDataToGoogleSheets() {
+  // SCRIPT_ID
+  const scriptDeploymentId =
+    "AKfycbxr6i6fQrKJYaYsAckHRKdk1Rp9zVTkcHcA7UJ0oI0764oJKl_nMe_w-AqvVoeUDhMf8Q";
+
+  let uri = window.location.href;
+
+  // if (isSquarespace) {
+  //   uri = MAIN_SITE_URL + "?config=" + GetURLWithParameters("", true);
+  // }
+
+  $.ajax({
+    url: `https://script.google.com/macros/s/${scriptDeploymentId}/exec`,
+    method: "POST",
+    data: {
+      name: $("#firstname").val(),
+      phone: $("#phoneNumber").val(),
+      email: $("#email").val(),
+      configuration: uri,
+    },
+    success: function (response) {
+      console.log("Data sent successfully:", response);
+    },
+    error: function (error) {
+      console.error("Error:", error);
+    },
   });
 }

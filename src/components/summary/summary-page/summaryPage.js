@@ -134,6 +134,14 @@ export function summaryPageComponent(container) {
     ? `Yes`
     : "No";
 
+  const isTexture =
+    typeof state.colorRoof === "string" &&
+    /\.(jpe?g|png|webp)$/i.test(state.colorRoof);
+
+  const style = isTexture
+    ? `background-image: url('${state.colorRoof}'); background-size: cover; background-position: center;`
+    : `background-color: ${state.colorRoof};`;
+
   const summaryContent = $(`
     <div id="summary-content">
   <div class="sum__page" id="sum-page">
@@ -215,9 +223,7 @@ export function summaryPageComponent(container) {
         <p class="sum__page__main-list__title">Roof color</p>
 
         <div class="sum__page__main-list__info"> 
-          <div class="sum__page__main-list__info__color" style="background-color: ${
-            state.colorRoof
-          }"></div>
+          <div class="sum__page__main-list__info__color" style="${style}"></div>
           <div class="sum__page__main-list__info__param">${stringNameRoofColor}</div>
         </div>
       </li>
@@ -262,7 +268,7 @@ export function summaryPageComponent(container) {
         <div class="sum__page__main-list__info"> 
           <h3 class="sum__page__main-list__info__title">LED Strip</h3>
           <div class="sum__page__main-list__info__param">${
-            GetGroup("header").children[1].visible ? "Yes" : "No"
+            state.electro.has(pergolaConst.optionNameString.LEDStrip) ? "Yes" : "No"
           }</div>
         </div>
 

@@ -44,7 +44,7 @@ export const shadesRange = [
 
 export const bladeRotation = [
   {
-    title: "Blade Rotation",
+    title: "Roof Settings",
     min: 1,
     labelMin: "0",
     max: 90,
@@ -571,7 +571,9 @@ export function portalComponent() {
 
       case 10:
         portaInnerHtml = `
-          <h3 class="portal-container__title">Blade Rotation</h3>
+          <h3 class="portal-container__title">${bladeRotation[0].title}</h3>
+
+          <div class="canvas_menu__title canvas_menu__title--blade-r">Blade Rotation</div>
 
           <div class="portal-container__range" id="blade-range_wrap">
           ${bladeRange}
@@ -1358,10 +1360,22 @@ export function portalComponent() {
 
       $(".interface-container").addClass("interface-container-portal");
 
-      portal.css({
-        top: iconOffset.top + $(this).outerHeight() - 30,
-        left: iconOffset.left,
-      });
+      const interfaceHeight = $(".interface-container").outerHeight();
+
+      if ($(window).width() <= 1024) {
+        portal.css({
+          bottom: 0,
+          top: "",
+          left: "",
+        });
+      } else {
+        const iconOffset = $(this).offset();
+        portal.css({
+          top: iconOffset.top + $(this).outerHeight() - 30,
+          left: iconOffset.left,
+          bottom: "",
+        });
+      }
 
       pergola.update();
     });

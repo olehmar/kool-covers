@@ -49,6 +49,11 @@ export const stringPostSize = {
   1: `8&quot x 8&quot`,
 };
 
+export const stringColorType = {
+  0: `Standart Colors`,
+  1: `Wood Colors`,
+};
+
 export const groups = [
   {
     title: "Manufacturer",

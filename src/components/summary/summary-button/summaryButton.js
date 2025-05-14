@@ -19,10 +19,10 @@ export function summaryButtonComponent(container) {
 
     $("body").addClass("body-overflow-auto");
 
-    toggleLoad(true);
+    // toggleLoad(true);
     summaryPageComponent(mainContent);
-    await CreateImageList();
-    toggleLoad(false);
+    // await CreateImageList();
+    // toggleLoad(false);
 
     $(".portal-container__close").trigger("click");
   });

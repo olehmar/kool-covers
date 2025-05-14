@@ -8,8 +8,11 @@
   //   }
   // }
 
+  .type_interface_checkbox-wall_item-img {
+    max-width: 98px;
+  }
+
   .type_interface_colors-buttons_label {
-    min-width: 59px;
     width: 100%;
   }
 
@@ -24,8 +27,7 @@
   }
 
   .type_interface_colors-buttons .colors_container {
-    grid-template-columns: repeat(5, 54px) !important;
-    gap: 0 !important;
+    grid-template-columns: repeat(5, auto) !important;
     justify-content: space-between;
   }
 
@@ -35,7 +37,7 @@
   }
 
   .type_interface_colors-buttons_item {
-    width: fit-content;
+    width: 54px;
   }
 
   .container_shareAR {
@@ -100,7 +102,8 @@
   }
 
   .input_time_switch {
-    right: 16px;
+    width: fit-content;
+    left: auto;
   }
 
   .canvas_buttons {
@@ -111,13 +114,13 @@
   }
 
   .portal-container {
-    transform: translateY(46px) !important;
+    transform: translateY(50%) !important;
     width: 100%;
     border: 0;
     box-shadow: 0px 0px 20px 0px #d9deda99;
     left: 0 !important;
     right: 0;
-    border-radius: 0;
+    border-radius: 12px 12px 0 0;
   }
 
   .icon_wrap {
@@ -127,7 +130,8 @@
   }
 
   .icon_container {
-    display: grid !important;
+    display: flex !important;
+    flex-direction: row-reverse;
     bottom: 0;
     top: auto;
     overflow: auto;
@@ -474,6 +478,7 @@
     width: 100% !important;
     height: 100%;
     padding: 16px !important;
+    border-radius: 0;
   }
 
   #closeForm {
@@ -502,7 +507,7 @@
   }
 
   .form__input {
-    height: 38px;
+    height: 47px;
     font-size: 12px !important;
   }
 
@@ -523,6 +528,7 @@
 
   .form__check-input {
     width: 25px !important;
+    margin-top: 4px;
   }
 
   .form__buttons {
@@ -644,6 +650,12 @@
     padding: 22px 6px 33px 6px;
   }
 
+  .type_interface_electronic {
+    row-gap: 16px;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 20px;
+  }
+
   .type_interface_electronic .image-container {
     height: fit-content;
   }
@@ -656,7 +668,11 @@
     left: 3.4px !important;
   }
 
-  .form__input {
-    border-radius: 0 !important;
+  .sum__page__main-list {
+    gap: 28px;
+  }
+
+  .share-ar__container {
+    top: 75% !important;
   }
 }
