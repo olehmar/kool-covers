@@ -73193,7 +73193,7 @@ class PergolaObject {
 
                 const intervalPost = 2.5;
                 const half = system.spanWidth / 2;
-                const countPosts = Math.ceil(system.spanWidth / intervalPost);
+                const countPosts = Math.floor(system.spanWidth / intervalPost);
                 const direction = isDirectionX ? "x" : "z";
 
                 const mirroredPoints = generateMidpoints(
@@ -73234,6 +73234,7 @@ class PergolaObject {
                   generatedPosts.push(newPost);
                 }
 
+                // remove slats
                 for (let i = frame.children.length - 1; i >= 0; i--) {
                   const child = frame.children[i];
                   if (child.name && child.name.includes("slat_clone")) {
@@ -73253,15 +73254,17 @@ class PergolaObject {
                   for (let i = 1; i < countShutter; i++) {
                     const newBlade = finalBlade.clone();
                     newBlade.position.y = i * fullShutterHeight;
-                    // newBlade.position.x = post.position.x;
-                    // newBlade.position.z = post.position.z;
-                    // if (!isDirectionX) {
-                    //   newBlade.position.x = post.position.x;
-                    // } else {
-                    //   newBlade.position.z = post.position.z;
-                    // }
-                    // newBlade.position.x = post.position.x;
-                    // newBlade.position.z = post.position.z;
+
+                    newBlade.name = "slat_clone";
+                    this.changeObjectVisibility(true, newBlade);
+                    frame.add(newBlade);
+                  }
+                }
+
+                if (!generatedPosts.length) {
+                  for (let i = 1; i < countShutter; i++) {
+                    const newBlade = finalBlade.clone();
+                    newBlade.position.y = i * fullShutterHeight;
 
                     newBlade.name = "slat_clone";
                     this.changeObjectVisibility(true, newBlade);
@@ -79375,4 +79378,4 @@ module.exports = __webpack_require__.p + "eb73ba43466d6e72330e.svg";
 /******/ 	
 /******/ })()
 ;
-//# sourceMappingURL=main.2533927f49a73c5b7992.js.map
+//# sourceMappingURL=main.e04a3b255c7905e72e70.js.map
